@@ -1,0 +1,219 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+
+const Login = () => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // 입력 시 해당 필드의 에러 제거
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = "이메일을 입력해주세요.";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "올바른 이메일 형식을 입력해주세요.";
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "비밀번호를 입력해주세요.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      await login(formData.email, formData.password);
+      navigate("/dashboard");
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.non_field_errors?.[0] ||
+        error.response?.data?.detail ||
+        "로그인 중 오류가 발생했습니다.";
+      setErrors({ general: errorMessage });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* 헤더 */}
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 bg-primary-600 rounded-full flex items-center justify-center">
+            <svg
+              className="h-6 w-6 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+              />
+            </svg>
+          </div>
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">가계부 앱</h2>
+          <p className="mt-2 text-sm text-gray-600">계정에 로그인하세요</p>
+        </div>
+
+        {/* 로그인 폼 */}
+        <div className="bg-white py-8 px-6 shadow-xl rounded-xl border border-gray-100">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* 일반 오류 메시지 */}
+            {errors.general && (
+              <div className="bg-danger-50 border border-danger-200 text-danger-700 px-4 py-3 rounded-lg text-sm">
+                {errors.general}
+              </div>
+            )}
+
+            {/* 이메일 */}
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                이메일
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                className={`w-full px-3 py-3 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
+                  errors.email ? "border-danger-300" : "border-gray-300"
+                }`}
+                placeholder="your@email.com"
+                value={formData.email}
+                onChange={handleChange}
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-danger-600">{errors.email}</p>
+              )}
+            </div>
+
+            {/* 비밀번호 */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                비밀번호
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                className={`w-full px-3 py-3 border rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
+                  errors.password ? "border-danger-300" : "border-gray-300"
+                }`}
+                placeholder="비밀번호를 입력하세요"
+                value={formData.password}
+                onChange={handleChange}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-danger-600">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            {/* 로그인 버튼 */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? (
+                <div className="flex items-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  로그인 중...
+                </div>
+              ) : (
+                "로그인"
+              )}
+            </button>
+
+            {/* 회원가입 링크 */}
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                계정이 없으신가요?{" "}
+                <Link
+                  to="/register"
+                  className="font-medium text-primary-600 hover:text-primary-500 transition-colors"
+                >
+                  회원가입
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
+
+        {/* 데모 계정 안내 */}
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">
+            데모 체험하기
+          </h3>
+          <p className="text-xs text-gray-600">
+            회원가입 없이 바로 체험해보세요. 회원가입 후 나만의 가계부를 관리할
+            수 있습니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
